@@ -1,0 +1,88 @@
+public class ViewManager : Singleton
+{
+public Transform UIGameObject;
+private Dictonary viewMap = new Dictonary();
+private Transform hudParent;
+private Transform UIroottransform;
+private BaseView m_currentView = null;
+public GameObject InitUi(string path){
+var uiobject = Object.instantiate((GameObject)Resource.Load("XX/XX"+path))as GameObject;
+uiobject.transform.parent = UIroottransform;
+uiobject.transform.localPosition = Vectory.zero;
+uiobject.transform.localRotation = Vectory.zero;
+uiobject.transform.localScale = Vectory.one;
+return uiobject;
+}
+public Transform HudParent{
+get{
+if(hudParent ==null){
+hudParent = UIroottransform.Find("XXX/xxx");
+}
+return hudParent;
+}
+}
+public BaseView OpenView(ViewType viewtype,bool closeotherview = true,bool dispose = true){
+BaseView baseView= null;
+if(closeotherview){
+List removeviewtype = new List();
+for(var i = 0; i < viewMap.Count;i++){
+if(viewMap[i].Key != viewtype && viewMap[i].Value != null){
+viewMap[i].Value.CloseView(dispose);
+removiewtype.Add(viewMap[i].Key);
+}
+}
+if(dispose){
+for(var i =0; i<removeviewtype.Count;i++){
+viewMap.Remove(removeviewtype[i]);
+}
+}
+m_currentView = null;
+}
+if(viewMap.Contains(viewtype)){
+m_currentView = viewMap[viewMap];
+baseView = m_currentView;
+}
+else{
+switch(viewType):
+case XXX:
+baseView = new XXX();
+break;
+case XX:
+baseView = new XX();
+break;
+default:
+break;
+if(baseView !=null){
+viewMap[viewType] = baseView;
+baseView.ViewType = viewType;
+baseView.parentView = m_currentView;
+m_currentView = baseView;
+}
+}
+if(baseView.parentView!=null){
+baseView.parentView.InactiveView();
+}
+if(baseView!=null){
+if(!baseView.isOpened){
+baseView.OpenView();
+}
+baseView.ActiveView();
+}
+return baseView;
+} 
+public void CloseCurrentView(bool dispose = true){
+if(m_currentView!=null){
+m_currentView.CloseView(dispose);
+m_currentView = m_currentView.parentView;
+if(m_currentView !=null){
+m_currentView.ActiveView();
+}
+}
+}
+public BaseView GetView(ViewType viewType){
+if(viewMap.Contains(viewType)){
+return viewMap[vuewType];
+}
+return null;
+}
+}
