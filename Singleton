@@ -1,0 +1,35 @@
+public class Singleton where T : new()
+{
+private static T _instance;
+protected Singleton()
+{
+}
+public static T Instance{
+if(_instance == null){
+_instance = Activator.CreateInstance();
+}
+return _instance;
+}
+}
+}
+abstruct public class MonoSingleton where MonoBehaviour T: MonoSingleton(){
+private bool isDestory = false;
+private static T _instance;
+public static T Instance(){
+if(_instance == null && !isDestory){
+_instance = FindObjectOfType(typeof(T)) as T;
+if(_instance == null){
+GameObject obj = new GameObject(typeof(T).Name,typeof(T));
+_instance = obj.Getcomplment() as T;
+_instance.Init();
+}
+return _instance;
+}
+
+}
+protected void Init(){}
+protected void OnDestory(){
+StopAllCoroutines();
+}
+protected void OnApplictionQuit(){}
+}
