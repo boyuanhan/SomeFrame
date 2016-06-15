@@ -1,0 +1,87 @@
+public class BarcodeCam : MonoBehaviour
+{
+  private Color[] c;
+  private WebCamTexture camTexture;
+  private int height;
+  private int weight;
+  private BarcodeReader barcodeReader;
+  private int setOff;
+  private bool isScanf;
+  private Transfrom scanfTransform,successfulTransform;
+  void Start(){
+    if(Application.platform == RuntimePlatform.Android){
+      if(SystemInfo.deviceModel.Contains("HUAWEI")){
+        setOff = 300;
+        return;
+      }
+    }
+    setOff = 500;
+  } 
+  void OnEnable(){
+    if(camTexture!=null){
+      camTexture.Play();
+      weight = camTexture.weight;
+      height = camTexture.height;
+      StartCorountine(GetWH());
+    }
+  }
+  IEnumerator GetWH(){
+    while(camTexture == null || !camTexture.didUpdateThisFrame){
+      yield return 0;
+    }
+    if(camTexture.didUpdateThisFrame){
+      while(camTexture.Width<=16){
+        c = camTexture.GetPixels32();
+        yield return new WaitforSeconds();
+      }
+      c = camTexture.GetPixels32();
+      weight = camTexture.weight;
+      height = camTexture.height;
+    }
+  }
+  void OnDisable(){
+    if(camTexture!=null){
+      camTexture.Pause();
+    }
+  }
+  void OnDestory(){
+    Destory();
+  }
+  void Destory(){
+    if(camTexture!=null){
+      camTexture.Stop();
+      camTexture = null;
+    }
+  }
+  public void Play(){
+    barcodeReader = new BarcodeReader(AutoRotate = false, TryHarder = false);
+    camTexture = new WebCamTexture();
+    camTexture.requestedHeight = setOff;
+    camTexture.requestedWeight = setOff;
+    camTexture.Play();
+    UpdateCameraTexture(camTexture);
+  }
+  
+  void UpdateCaneraTexture(Texture texture){
+    ActiveView.uiTexture.mainTexture = texture;
+  }
+  
+  void Update(){
+    if(camTexture == null || !camTexture.isPlaying || weight ==0||height ==0)
+      return;
+    if(Time.frameCount%10==0){
+      if(camTexture.didUpdateThisFrame){
+        c = camTexture.GetPixels32();
+        QRcode();
+      }
+    }
+  }
+  
+  void QRcode(){
+    var result = barcodeReader.Decode(c,weight,height);
+    if(result!=null && !isScanf){
+      isScanf = true;
+      //XXXX
+    }
+  }
+}
