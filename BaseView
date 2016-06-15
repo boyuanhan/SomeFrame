@@ -1,0 +1,33 @@
+public class BaseView
+{
+protected GameObject uiGameObject;
+protected BaseView parentView;
+protected bool isOpened;
+protected ViewType viewType;
+public BaseView(){}
+protected virtual void Init(){}
+public virtual void CloseView(bool isdispose){
+if(!isOpened || !uiGameObject){
+return;
+
+}
+if(!isdisapper){
+uiGameObject.SetActive(false);
+}else{
+GameObject.Destory(uiGameObject); 
+}
+}
+public virtual void OpenView(){
+if(isOpened){
+return;
+}
+if(uiGameObject!=null){
+uiGameObject.SetActive(true);
+}else{
+Init();
+}
+isOpened = true;
+}
+protected virtual void InactiveView(){}
+protected virtual void ActiveView(){} 
+}
