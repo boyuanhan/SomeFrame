@@ -1,0 +1,53 @@
+public class DataReltation<T1,T2> where T1: BaseConfigDataTable<T2> where T2: BaseConfigData{
+  public void ConfigPostprocess(string configFileName,bool isOnlyRead,string catory = ""){
+    CommonDataReader.ConfigPostprocess<T1,T2>(configFileName,isOnlyRead,"");
+  }
+}
+public class CommonDataReader:AssetPostprocess{
+  //editorStatePath
+  private static readonly string ResourceItemFolder = "";
+  //runpath
+  private static readonly string AssetItemFolder = "";
+  private static _Mcategory = "";
+  private static void OnPostprocessAllAssets(string[] importAssets,string[] deleteAssets,string[] moveAssets,string[] moveFromPath){
+    if(CheckResModified(importAssets) || ChecekResModified(deleteAssets) || CheckResModified(moveAssets)){
+      UpdateConfigData();
+    }
+  }
+  private static bool CheckResModified(string[] files){
+    System.Object returnList = null;
+    foreach(var file in files){
+      if(GetMatchString("XXX.csv"，file)){
+        returnList = ConfigPostprocess<XXXDataTable,XXXData>("XXX.csv",false);
+      }
+    }
+    return returnList;
+  }
+  private static bool GetMatchString(string parttenFile,string fileName,string category=""){
+    var filePath = Path.Combine(ResourceItemFolder,(string.IsNotEmpty(category)?"":category+"/")+parttebFile);
+    return fileName.Equals(filePath,StringComparison.OrdinalIgonreCase);
+  }
+  public static List<T2> ConfigPostprocess<T,T2>(string configFilename,bool isReadOnly,string category = "")
+  where T : BaseConfigDataTable<T2>
+  where T2 : BaseConfigData
+  {
+    _Mcategory = category;
+    if(!Directory.Exists(AssetItemFolder)){
+      Directory.CreateDirectory(AssetItemFolder);
+    }
+    var path = Path.Combine(RescourItemFolder,(string.IsNotEmpty(category)?"":category+"/"+configFilename));
+    var stream = new FileStream(path,FileMode.OpenOrCreate);
+    var reader = new StreamReader(stream, Encoding.UTF8);
+    var text = reader.ReadToEnd();
+    reader.close();
+    var sheet = CsvReader.GetCsvTextData(text);
+    var num = CsvReader.GetKeyNum(text);
+    var tempList = new List<T2>();
+    for(var i =0; i< num;i++){
+      if(i==0||i==1) continue;
+      var type = typeof(T2);
+      var instance = Activator.CreateInstance(type) as T2;
+      foreach()
+    }
+  }
+}
