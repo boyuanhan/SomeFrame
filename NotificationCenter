@@ -1,0 +1,46 @@
+public delegate void NotifyDelegate(params object[] args);
+public class NotificationCenter: MonoSingle<NotificationCenter>{
+  private bool isInitation = false;
+  Dictionary<NotifyType,NotifyDelegate> _observerList;
+  protected override void Init(){
+    if(isInitation == false){
+      _observerList = new Dictonary<NotifyType,NotifyDelegate>();
+      isInitation = true;
+      Don'tDestoryOnLoad(gameobject);
+    }
+  }
+  protected override void OnDestory(){
+    if(_observerList != null){
+      _observerList.Clear();
+    }
+    isInitation = false;
+  }
+  public void RegisterObserver(NotifyType notifyType,NotifyDelegate cb){
+    NotifyDelegate existcb = null;
+    bool isExist = _observerList.TryGetValue(notifyType,out existcb);
+    if(isExist){
+      existcb += cb;
+      _observerList[notifyType] = existcb;
+    }else{
+      existcb = cb;
+      _observerList.Add(notifyType,existcb);
+    }
+  }
+  public void UnRegisterObserver(NotifyType notifyType,NotifyDelegate cb){
+    if(isInitation == true){
+      NotifyDelegate existcb = null;
+      bool isExist = _observerList.TryGetValue(notifyType,out existcb);
+      if(isExist){
+        existcb -= cb;
+        _observerList[notifyType] = existcb;
+      }
+    }
+  }
+  public void ExecuteRegisterFunc(NotifyType notifyType,param object[] args){
+    NotifyDelegate cb = null;
+    _observerList.TryGetValue(notifyType,out cb);
+    if(cb != null){
+      cb(args);
+    }
+  }
+}
