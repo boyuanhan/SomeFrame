@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+//标记此特征表示在读表过程中忽略
+[AttributeUsage(AttributeTargets.Field)]
+public class HideInDataReaderAttribute:Attribute{}
+
+//标记此特征表示从FieldOfPath中读取prefab，赋与此Field。此Field必须为GameObject
+[AttributeUsage(AttributeTargets.Field)]
+public class DataToObjectAttribute:Attribute{
+  public Type AssetType = typeof(GameObject);
+  public string PrefabPath;
+}
+
+//标记此特征表示从FieldOfPath中读取prefab，赋与此Field。此Field必须为GameObject
+[AttributeUsage(AttributeTargets.Field)]
+public class DataSplitToObjectAttribute:Attribute{
+  public Type CustomerType;
+  public string PrefabPath;
+  public char SplitChar;
+}
+
+//标记此特征表示从FieldOfPath中读取prefab，赋与此Field。此Field必须为GameObject
+[AttributeUsage(AttributeTargets.Field)]
+public class DataSplitToCustomerObjectArrayAttribute:Attribute{
+  public Type CustomerType;
+  public string InitMethodName;
+  public int Length;
+  public char ParSplitChar;
+  public string[] PrefabPath;
+  public char SplitChar;
+  public Type[] Types;
+ }
+ 
+ //标记此特征表示从FieldOfPath中读取prefab，赋与此Field。此Field必须为GameObject
+ [AttributeUsage(AttributeTargets.Field)]
+ public class CustomerParseAttribute:Attribute{
+  public string InitMethodName;
+  public int Length;
+  public char SplitChar;
+  public Type[] Types;
+ }
+ 
+ //标记此特征表示Field与对应的sheetName不一致，需要读Csv中SheetNameOfData中的列
+ [AttributeUsage(AttributeTargets.Field)]
+ public class FieldMapAttribute:Attribute{
+  public string SheetNameOfData;
+ }
+ 
+ [AttributeUsage(AttributeTargets.Field)]
+ public class EnumMapAttribute:Attribute{}
+ 
+ public class BaseConfigDataTable<T> : ScriptableObject where T : BaseConfigData{
+  public T[] Datas;
+  public void Init(int length,object dataList){
+    Datas = new T[length];
+    var realData = dataList as List<T>;
+    if(realData == null){
+      Debuger.log("Read data problem,type of data"+typeof(T));
+      return;
+    }
+    for(var i =0;i<realData.Count;i++){
+      Datas[i] = realData[i];
+      Datas[i].Init();
+    }
+  }
+  public T GetDataById(int id){
+    for(var j = 0; j < Datas.Length;j++){
+      if(Datas[j].id == id){
+        return Datas[j];
+      }
+      retrun null;
+    }
+  }
+ }
+ 
+ public abstract class BaseConfigData{
+  public int Id;
+  public virtual void Init(){}
+ }
