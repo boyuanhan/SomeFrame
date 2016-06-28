@@ -1,3 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Xml;
+using UnityEditor;
+using UnityEngine;
+using XmlSpreadSheet = System.Collections.Generic.Dictionary<string, object[]>;
+
 public class DataReltation<T1,T2> where T1: BaseConfigDataTable<T2> where T2: BaseConfigData{
   public void ConfigPostprocess(string configFileName,bool isOnlyRead,string catory = ""){
     CommonDataReader.ConfigPostprocess<T1,T2>(configFileName,isOnlyRead,"");
