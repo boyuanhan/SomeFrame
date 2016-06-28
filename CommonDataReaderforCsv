@@ -27,7 +27,7 @@ public class CommonDataReader:AssetPostprocess{
     var filePath = Path.Combine(ResourceItemFolder,(string.IsNotEmpty(category)?"":category+"/")+parttebFile);
     return fileName.Equals(filePath,StringComparison.OrdinalIgonreCase);
   }
-  public static List<T2> ConfigPostprocess<T,T2>(string configFilename,bool isReadOnly,string category = "")
+  public static List<T2> ConfigPostprocess<T,T2>(string configFilename,bool isOnlyReady,string category = "")
   where T : BaseConfigDataTable<T2>
   where T2 : BaseConfigData
   {
@@ -47,7 +47,186 @@ public class CommonDataReader:AssetPostprocess{
       if(i==0||i==1) continue;
       var type = typeof(T2);
       var instance = Activator.CreateInstance(type) as T2;
-      foreach()
+      foreach(var filed in type.GetFields){
+        var sheetName = field.Name;
+        if(!Attribute.IsDefined(field,typeof(HideInDataReaderAttribute)){
+          if(Attribute.IsDefined(field,typeof(CustomerParseAttribute))){
+            var prefabPathIndex = 0;
+            var sheetVal = sheet[sheetName][i].ToString();
+            if(sheetVal != "0"){
+              var cusAtts = Attribute.GetCustomAttribute(filed,trypeof(CustomerParseAttribute)) as CustomerParseAttribute;
+              if(cusAtts != null){
+                var vals = sheetVal.Split(cusAtts.SplitChar);
+                var obj = field.FielType.Assembly.CreateInstance(field.FieldType.Name);
+                var inital = string.IsNullOrEmpty(cusAtts.InitMethodName)?"InitData":cusAtts.InitMethodName;
+                for(var k = 0;k<cusAtts.Types.Length;k++){
+                  if(cusAtts.Types[k] == trypeof(GameObject)){
+                    var paramObj = (GameObject)AssetDatabase.LoadAssetAtPath(Path.Combine(cusAtts.PrefabPath[prefabPathIndex],vals[k]+".prefab"),typeof(GameObject));
+                    prefabPathIndex++;
+                    inital.Invoke(obj,new object[]{k,paramObj});
+                  }else{
+                    inital.Invoke(obj,new object[]{vals[k]});
+                  }
+                }
+                field.SetValue(instance,obj);
+              }
+            }
+            else{
+              field.SetValue(instance,null);
+            }
+          }
+          else if(Attribute.IsDefined(field,typeof(DataToObjectAttribute))){
+            var sheetVal = sheet[sheetName][i].ToString();
+            if(sheetVal != "0"){
+              var cusAtts = Attribute.GetCustomAttribute(field,typeof(DataToObjectAttribute)) as DataToObjectAttribute;
+              if(cusAtts != null){
+                var prefabPath = string.IsNullOrEmpty(cusAtts.PrefabPath)?Path.Combine("Assets/",sheetVal):Path.Combine(cusAtts.PrefabPath,sheetVal);
+                var obj = AssetDatabase.LoadAssetAtPath(prefabPath,cusAtts.AssetType);
+                field.SetValue(instance,Convert.ChangeType(obj,field.FieldType));
+              }
+            }
+            else{
+              field.SetValue(instance,null);
+            }
+          }
+          else if(Attribute.IsDefined(field,typeof(DataSplitToObjectArrayAttribute))){
+            var sheetVal = sheet[sheetName][i].ToString();
+            if(sheetVal != "0"){
+              var cusAtts = Attribute.GetCustomAttribute(field,typeof(DataSplitToObjectArrayAttribute)) as DataSplitToObjectArrayAttribute;
+              if(cusAtts != null){
+                var datas = sheetVal.Split(cusAtts.SplitChar);
+                var gos = Array.CreateInstance(cusAtts.CustomerType,datas.Length);
+                for(var j =0;j<datas.Length;j++){
+                  if(cusAtts.CustomerType == typeof(GameObject)){
+                    gos.SetValue(AssetDatabase.LoadAssetAtPath(Path.Combine(cusAtts.PrefabPath,datas[j]+".prefab"),cusAtts.CustomerType),j);
+                  }else{
+                    gos.SetValue(Convert.ChangeType(datas[j],cusAtts.CustomerType),j);
+                  }
+                }
+                field.SetValue(instance,Convert.ChangeType(gos,field.FieldType));
+              }
+            }
+            else{
+              field.SetValue(instance,null);
+            }
+          }
+          else if(Attribute.IsDefined(field,typeof(DataSplitToCustomerObjectArrayAttribute))){
+            var sheetVal = sheet[sheetName][i].ToString();
+            if(sheetVal != "0"){
+              var cusAtts = Attribute.GetCustomAttribute(field,typeof(DataSplitToCustomerObjectArrayAttribute)) as DataSplitToCustomerObjectArrayAttribute;
+              if(cusAtts != null){
+                var datas = sheetVal.Split(cusAtts.SplitChar);
+                var objs = Array.CreateInsance(cusAtts.CustomerType,datas.Length);
+                for(var l =0;l<datas.Length;l++){
+                  var prefabPathIndex = 0;
+                  var vals = datas[l].Split(cusAtts.SplitChar);
+                  var obj = cusAtts.CustomerType.Assembly.CreateInstance(cusAtts.CustomerType.Name);
+                  var initMethod = string.IsNullOrEmpty(cusAtts.InitMethodName)?"InitData":cusAtts.InitMethodName;
+                  var inital = cusAtts.CustomerType.GetMethod(initMethod);
+                  for(var m =0; m<cusAtts.Types.Length;m++){
+                    if(cusAtts.Types[m] == typeof(GameObject)){
+                      var paramObj = (GameObject)AssetDatabase.LoadAssetAtPath(Path.Combine(cusAtts.PrefabPath[prefabPathIndex],vals[m]+".prefab"),typeof(GameObject));
+                      if(cusAtts.PrefabPath,Length > prefabPathIndex + 1){
+                        prefabPathIndex++;
+                      }
+                      inital.Invoke(obj,new object[]{m,paramObj});
+                    }
+                    else{
+                      inital.Invoke(obj,new object[]{m,vals[m]});
+                    }
+                  }
+                  objs.SetValue(obj,l);
+                }
+                field.SetValue(instance,Convert.ChangeType(objs,field.FieldType));
+              }
+            }
+            else{
+              filed.SetValue(instance,null);
+            }
+          }
+          else{
+            if(Attribute.IsDefined(field,typeof(FieldMapAttribute))){
+              var cusAtts = Attribute.GetCustomAttribute(field,typeof(FieldMapAttribute)) as FieldMapAttribute;
+              if(cusAtts != null){
+                sheetName = cusAtts.SheetNameOfData;
+              }
+            }
+            var sheetVal = sheet[sheetName][i];
+            if(sheetVal.ToString().Trim() != ""){
+              field.SetValue(instance,Attribute.IsDefined(field,typeof(EnumMapAttribute))?Enum.Parse(field.FieldType,sheetVal.ToString()):Convert.ChangeType(sheetVal,field.FieldType));
+            }
+          }
+        }
+      }
+      tempList.Add(instance);
     }
+    if(!isOnlyReady){
+      CreateConfigDataBase<T,T2>(tempList);
+    }
+    return tempList;
+  }
+  
+  public static void CreateConfigDataBase<T,T2>(List<T2> list)
+  where T ： BaseConfigDataTable<T2>
+  where T2 : BaseConfigData
+  {
+    var fileName = typeof(T).Name;
+    var path = Path.Combine(AssetItemConfigFolder,(string.IsNullOrEmpty(_mCategory)?"":(_mCategory+"/"))+fileName+".asset);
+    if(File.Exists(path)){
+      var database = (T)AssetDatabase.LoadAssetAtPath(path,typeof(T));
+      if(database == null){
+        Debuger.LogWarning("如果加载返回");
+        return;
+      }
+      //申请内存存储数据
+      database.Init(list.Count,list);
+      //当资源已改变并需要保存到磁盘，Unity内部使用dirty来标识
+      EditorUtility.SetDirty(database);
+      Debuger.Log("updateData:"+path);
+    }
+    else{
+      //创建对象
+      var database = ScriptableObject.CreateInstance<T>();
+      //申请内存存储数据
+      database.Init(list.Count,list);
+      //创建Asset文件
+      AssetDatabase.CreateAsset(database,path);
+      Debuger.Log("updateData:"+path);
+    }
+  } 
+  
+  private static void UpdateConfigDataTable(){
+    string fileName = @"Assets/Resources/ConfigData.xml";
+    StringBuilder strBuilder = new StringBuilder();
+    if(File.Exists(fileName)){
+      File.Delete(fileName);
+    }
+    XmlWriterSettings settings = new XmlWriterSetting();
+    setttings.Indent = true;
+    var s_xmlWriter = XmlWriter.Create("Assets/Resources/ConfigData.xml",settings);//配置文件目录
+    s_xmlWriter.WriteStartElement("FILELIST");
+    s_xmlWriter.WriteEndElement();
+    s_xmlWriter.Flush();
+    s_xmlWriter.Close();
+    
+    XmlDocument doc = new XmlDocument();
+    doc.Load(fileName);
+    var path = AssetItemConfigFolder;
+    var files = Directory.GetFiles(path);
+    foreach(var file in files){
+      if(!file.Contains(".meta")){
+        var exactFileName = file;
+        strBuilder.Remove(0,strBuilder.Length);
+        strBUilder.AppendFormat("//FILE[@NAMEID='{0}']",exactFileName);
+        XmlNode fileNode = doc.SelectSingleNode(strBuilder.ToString());
+        XmlElement elementFile = doc.CreateElemnet("FILE");
+        elementFile.SetAttribute("NAMEID",exactFileName);
+        elementFile.SetAttribute("BUNDLENAME",file.Replace(AssetItemConfigFolder,"").Replace(".asset",""));
+        XmlNode elementFileList = doc.SelectSingleNode("//FILELIST");
+        elementFileList.AppendChild(elementFileList);
+      }
+    }
+    doc.Save(fileName);
+    AssetDatabase.Refresh();
   }
 }
